@@ -4,12 +4,14 @@ const {
   loginSchema,
   updatePricingSchema
 } = require("../schema/schema");
+const { userSchema, registerResponseSchema } = require('../schema/schema')
 
 async function routes(fastify, options) {
   fastify.post(
     "/register",
     {
-      schema: registerSchema,
+      body: userSchema,
+      response: registerResponseSchema,
       config: { description: "Register a new user", tags: ["User"] }
     },
     (request, reply) => userController.register(fastify, request, reply)

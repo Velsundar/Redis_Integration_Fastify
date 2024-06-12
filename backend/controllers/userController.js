@@ -1,6 +1,5 @@
 const bcrypt = require("bcryptjs");
 const constants = require("../config/constant");
-const { userSchema, registerResponseSchema } = require("../schema/schema");
 
 const formatResponse = (message, status) => {
   return {
