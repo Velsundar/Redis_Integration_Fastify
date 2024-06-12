@@ -14,7 +14,7 @@ const register = async (fastify, request, reply) => {
   const { username, password, email, phoneNumber } = request.body;
 
   const users = fastify.mongo.db.collection("users");
-  const existingUser = await users.findOne({ $or: [{ username }, { email }] });
+  const existingUser = await users.findOne({ $or: [{ phoneNumber }, { email }] });
   if (existingUser) {
     return reply
       .status(409)
