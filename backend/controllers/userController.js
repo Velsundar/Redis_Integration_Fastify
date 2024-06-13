@@ -60,7 +60,15 @@ const login = async (fastify, request, reply) => {
   }
 
   const token = fastify.jwt.sign({ username });
-  await fastify.redis.set(`user:${username}:session`, JSON.stringify(user));
+
+  await fastify.redis.hmset(`user:${username}:session`, {
+    username: user.username,
+    email: user.email,
+    phoneNumber: user.phoneNumber
+  });
+  await fastify.redis.expire(`user:${username}:session`, 3600);
+
+  // await fastify.redis.set(`user:${username}:session`, JSON.stringify(userDataToCache), 'EX', 3600);
 
   reply.send({
     ...formatResponse(constants.SUCCESS, constants.STATUS_SUCCESS),
@@ -97,19 +105,28 @@ const getUser = async (fastify, request, reply) => {
     const token = request.headers.authorization.split(" ")[1];
     const decoded = fastify.jwt.verify(token);
 
-    let user = await fastify.redis.get(`user:${decoded.username}:session`);
-    if (user) {
+    let user = await fastify.redis.hgetall(`user:${decoded.username}:session`);
+    if (user && Object.keys(user).length) {
       console.log(`User data for ${decoded.username} fetched from Redis`);
-      user = JSON.parse(user);
     } else {
       console.log(`User data for ${decoded.username} not found in Redis. Fetching from MongoDB.`);
       const users = fastify.mongo.db.collection("users");
-      user = await users.findOne({ username: decoded.username });
-      if (user) {
-        await fastify.redis.set(`user:${decoded.username}:session`, JSON.stringify(user));
+      const userFromDb = await users.findOne({ username: decoded.username });
+      if (userFromDb) {
+        user = {
+          username: userFromDb.username,
+          email: userFromDb.email,
+        };
+        await fastify.redis.hmset(`user:${decoded.username}:session`, user);
+        await fastify.redis.expire(`user:${decoded.username}:session`, 3600);
         console.log(`User data for ${decoded.username} stored in Redis`);
       } else {
         console.log(`User data for ${decoded.username} not found in MongoDB`);
+        return reply
+          .status(constants.STATUS_NOT_FOUND)
+          .send(
+            formatResponse(constants.USER_NOT_FOUND, constants.STATUS_NOT_FOUND)
+          );
       }
     }
     reply.send({
