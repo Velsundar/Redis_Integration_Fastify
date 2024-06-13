@@ -99,16 +99,19 @@ const getUser = async (fastify, request, reply) => {
 
     let user = await fastify.redis.get(`user:${decoded.username}:session`);
     if (user) {
+      console.log(`User data for ${decoded.username} fetched from Redis`);
       user = JSON.parse(user);
     } else {
+      console.log(`User data for ${decoded.username} not found in Redis. Fetching from MongoDB.`);
       const users = fastify.mongo.db.collection("users");
       user = await users.findOne({ username: decoded.username });
-      await fastify.redis.set(
-        `user:${decoded.username}:session`,
-        JSON.stringify(user)
-      );
+      if (user) {
+        await fastify.redis.set(`user:${decoded.username}:session`, JSON.stringify(user));
+        console.log(`User data for ${decoded.username} stored in Redis`);
+      } else {
+        console.log(`User data for ${decoded.username} not found in MongoDB`);
+      }
     }
-
     reply.send({
       ...formatResponse(constants.SUCCESS, constants.STATUS_SUCCESS),
       user
