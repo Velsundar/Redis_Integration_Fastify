@@ -1,7 +1,7 @@
 const path = require("path");
 const fastify = require("fastify")({ logger: true });
 // const fastifySwagger = require("fastify-swagger");
-const autoload = require("fastify-autoload");
+const autoload = require("@fastify/autoload");
 const fastifySwagger = require ('@fastify/swagger');
 const fastifySwaggerUi = require('@fastify/swagger-ui');
 
