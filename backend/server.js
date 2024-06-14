@@ -64,6 +64,16 @@ fastify.register(autoload, {
   dir: path.join(__dirname, "routes")
 });
 
+fastify.ready(async () => {
+  try {
+    await fastify.redis.ping();
+    console.log('Redis connection established');
+  } catch (err) {
+    console.error('Error connecting to Redis:', err);
+    process.exit(1);
+  }
+});
+
 const start = async () => {
   try {
     await fastify.listen({ port: 4000, host: "0.0.0.0" });
